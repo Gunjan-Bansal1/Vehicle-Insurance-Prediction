@@ -28,7 +28,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: latest
         run: |
           if [ -z "$ECR_REPOSITORY" ]; then
@@ -60,7 +60,7 @@ jobs:
       - name: Run Docker Image on EC2
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
           if [ -z "$ECR_REPOSITORY" ]; then
              echo "::error::The 'ECR_REPO' secret is missing or empty in CD job."
