@@ -31,6 +31,10 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
           IMAGE_TAG: latest
         run: |
+          if [ -z "$ECR_REPOSITORY" ]; then
+            echo "::error::The 'ECR_REPO' secret is missing or empty. Please ensure it is defined in your repository secrets."
+            exit 1
+          fi
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
@@ -54,8 +58,15 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Run Docker Image on EC2
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
         run: |
-          docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}:latest
+          if [ -z "$ECR_REPOSITORY" ]; then
+             echo "::error::The 'ECR_REPO' secret is missing or empty in CD job."
+             exit 1
+          fi
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker stop app || true
           docker rm app || true
           docker run -d \
@@ -65,4 +76,4 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
             -e AWS_DEFAULT_REGION="us-east-1" \
             -e MONGODB_URL="${{ secrets.MONGODB_URL }}" \
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}:latest
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
